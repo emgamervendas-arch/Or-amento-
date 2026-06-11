@@ -242,4 +242,18 @@ h1 span{
   background:#111;
   color:#fff;
   font-size:18px;
+}.btn-voltar {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #222;
+  color: white;
+  border: 1px solid #ff7a00;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-voltar:hover {
+  background: #ff7a00;
 }

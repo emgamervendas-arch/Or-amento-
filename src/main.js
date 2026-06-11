@@ -2,6 +2,9 @@ import './style.css'
 
 const app = document.querySelector('#app')
 
+// Histórico para controlar a navegação dos botões de voltar
+const historicoTelas = []
+
 // Objeto global atualizado para salvar as escolhas do usuário
 const configuracao = {
   perfil: '',
@@ -18,45 +21,15 @@ const configuracao = {
 
 // Suas listas originais de peças e preços
 const cpus = [
-  {
-    nome: 'Ryzen 5 5600',
-    venda: 750,
-    custo: 650,
-    socket: 'AM4'
-  },
-  {
-    nome: 'Ryzen 7 7800X3D',
-    venda: 2800,
-    custo: 2500,
-    socket: 'AM5'
-  },
-  {
-    nome: 'Intel Core i5 14400F',
-    venda: 1400,
-    custo: 1250,
-    socket: 'LGA1700'
-  }
+  { nome: 'Ryzen 5 5600', venda: 750, custo: 650, socket: 'AM4' },
+  { nome: 'Ryzen 7 7800X3D', venda: 2800, custo: 2500, socket: 'AM5' },
+  { nome: 'Intel Core i5 14400F', venda: 1400, custo: 1250, socket: 'LGA1700' }
 ]
 
 const placasMae = [
-  {
-    nome: 'B550M AM4',
-    venda: 750,
-    custo: 650,
-    socket: 'AM4'
-  },
-  {
-    nome: 'B650M AM5',
-    venda: 1200,
-    custo: 1050,
-    socket: 'AM5'
-  },
-  {
-    nome: 'B760M',
-    venda: 950,
-    custo: 850,
-    socket: 'LGA1700'
-  }
+  { nome: 'B550M AM4', venda: 750, custo: 650, socket: 'AM4' },
+  { nome: 'B650M AM5', venda: 1200, custo: 1050, socket: 'AM5' },
+  { nome: 'B760M', venda: 950, custo: 850, socket: 'LGA1700' }
 ]
 
 const gpus = [
@@ -80,10 +53,33 @@ const gabinetes = [
   { nome: 'RGB Gamer', venda: 350, custo: 250 }
 ]
 
+// --- FUNÇÕES DE NAVEGAÇÃO ---
+function irParaTela(funcaoTela) {
+  historicoTelas.push(funcaoTela)
+  funcaoTela()
+}
+
+function telaAnterior() {
+  if (historicoTelas.length > 1) {
+    historicoTelas.pop() // Remove a tela atual do histórico
+    const telaAnterior = historicoTelas[historicoTelas.length - 1] // Pega a tela de trás
+    telaAnterior() // Executa a função da tela anterior
+  } else {
+    telaInicial()
+  }
+}
+
+// Expõe a função para o escopo global (necessário para o onclick="telaAnterior()" funcionar)
+window.telaAnterior = telaAnterior
+
 // Inicia o aplicativo na tela inicial
-telaInicial()
+irParaTela(telaInicial)
 
 function telaInicial() {
+  // Limpa o histórico se voltar para o início completo
+  historicoTelas.length = 0
+  historicoTelas.push(telaInicial)
+
   app.innerHTML = `
   <div class="hero">
     <img src="/logo.png" class="logo" alt="Leal Tech">
@@ -99,7 +95,7 @@ function telaInicial() {
 
   document
     .getElementById('btn-orcamento')
-    .addEventListener('click', telaPerfis)
+    .addEventListener('click', () => irParaTela(telaPerfis))
 }
 
 function telaPerfis() {
@@ -145,19 +141,22 @@ function telaPerfis() {
   document.querySelectorAll('.perfil').forEach(card => {
     card.addEventListener('click', () => {
       configuracao.perfil = card.dataset.tipo
-      telaCpu()
+      irParaTela(telaCpu)
     })
   })
 
   document
     .getElementById('voltarPerfil')
-    .addEventListener('click', telaInicial)
+    .addEventListener('click', telaAnterior)
 }
 
 // --- ETAPA 1: CPU ---
 function telaCpu() {
   app.innerHTML = `
     <div class="container-step">
+    <button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Escolha o Processador</h1>
       <div class="categorias">
         ${cpus.map((cpu, i) => `
@@ -173,7 +172,7 @@ function telaCpu() {
   document.querySelectorAll('.cpu').forEach(card => {
     card.addEventListener('click', () => {
       configuracao.cpu = cpus[card.dataset.id]
-      telaPlacaMae()
+      irParaTela(telaPlacaMae)
     })
   })
 }
@@ -185,7 +184,9 @@ function telaPlacaMae() {
   )
 
   app.innerHTML = `
-    <div class="container-step">
+    <div class="container-step"><button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Escolha a Placa-Mãe</h1>
       <p class="subtitulo-uso">Exibindo modelos compatíveis com o socket ${configuracao.cpu.socket}</p>
       <div class="categorias">
@@ -202,7 +203,7 @@ function telaPlacaMae() {
   document.querySelectorAll('.placa-mae').forEach(card => {
     card.addEventListener('click', () => {
       configuracao.placaMae = platesCompativeis[card.dataset.id]
-      telaGpu()
+      irParaTela(telaGpu)
     })
   })
 }
@@ -211,6 +212,9 @@ function telaPlacaMae() {
 function telaGpu() {
   app.innerHTML = `
     <div class="container-step">
+    <button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Escolha a Placa de Vídeo</h1>
       <div class="categorias">
         ${gpus.map((gpu, i) => `
@@ -226,7 +230,7 @@ function telaGpu() {
   document.querySelectorAll('.gpu').forEach(card => {
     card.addEventListener('click', () => {
       configuracao.gpu = gpus[card.dataset.id]
-      telaRam()
+      irParaTela(telaRam)
     })
   })
 }
@@ -234,7 +238,9 @@ function telaGpu() {
 // --- ETAPA 3: RAM ---
 function telaRam() {
   app.innerHTML = `
-    <div class="container-step">
+    <div class="container-step"><button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Escolha a Memória RAM</h1>
       <div class="categorias">
         ${rams.map((ram, i) => `
@@ -250,7 +256,7 @@ function telaRam() {
   document.querySelectorAll('.ram').forEach(card => {
     card.addEventListener('click', () => {
       configuracao.ram = rams[card.dataset.id]
-      telaSsd()
+      irParaTela(telaSsd)
     })
   })
 }
@@ -258,7 +264,9 @@ function telaRam() {
 // --- ETAPA 4: SSD ---
 function telaSsd() {
   app.innerHTML = `
-    <div class="container-step">
+    <div class="container-step"><button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Escolha o Armazenamento</h1>
       <div class="categorias">
         ${ssds.map((ssd, i) => `
@@ -274,7 +282,7 @@ function telaSsd() {
   document.querySelectorAll('.ssd').forEach(card => {
     card.addEventListener('click', () => {
       configuracao.ssd = ssds[card.dataset.id]
-      telaGabinete()
+      irParaTela(telaGabinete)
     })
   })
 }
@@ -282,7 +290,9 @@ function telaSsd() {
 // --- ETAPA 5: GABINETE ---
 function telaGabinete() {
   app.innerHTML = `
-    <div class="container-step">
+    <div class="container-step"><button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Escolha o Gabinete</h1>
       <div class="categorias">
         ${gabinetes.map((gabinete, i) => `
@@ -298,35 +308,23 @@ function telaGabinete() {
   document.querySelectorAll('.gabinete').forEach(card => {
     card.addEventListener('click', () => {
       configuracao.gabinete = gabinetes[card.dataset.id]
-      telaDadosCliente() // CORREÇÃO: Chama a tela de dados após o gabinete
+      irParaTela(telaDadosCliente)
     })
   })
 }
 
-// --- ETAPA 6: DADOS DO CLIENTE (Separada corretamente no escopo global) ---
+// --- ETAPA 6: DADOS DO CLIENTE ---
 function telaDadosCliente() {
   app.innerHTML = `
-    <div class="container-step">
+    <div class="container-step"><button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Seus Dados</h1>
 
       <div class="resultado">
-        <input
-          id="nome"
-          type="text"
-          placeholder="Nome Completo"
-        >
-
-        <input
-          id="telefone"
-          type="text"
-          placeholder="WhatsApp"
-        >
-
-        <input
-          id="cidade"
-          type="text"
-          placeholder="Cidade"
-        >
+        <input id="nome" type="text" placeholder="Nome Completo" value="${configuracao.nome}">
+        <input id="telefone" type="text" placeholder="WhatsApp" value="${configuracao.telefone}">
+        <input id="cidade" type="text" placeholder="Cidade" value="${configuracao.cidade}">
 
         <button id="continuar" class="btn-start">
           Continuar
@@ -340,7 +338,7 @@ function telaDadosCliente() {
     configuracao.telefone = document.getElementById('telefone').value
     configuracao.cidade = document.getElementById('cidade').value
 
-    telaResumo()
+    irParaTela(telaResumo)
   })
 }
 
@@ -380,7 +378,9 @@ ${venda.toLocaleString('pt-BR', {
 `)
 
   app.innerHTML = `
-    <div class="container-step">
+    <div class="container-step"><button class="btn-voltar" onclick="telaAnterior()">
+   ⬅ Voltar
+</button>
       <h1>Configuração Escolhida</h1>
 
       <div class="resultado">
@@ -417,7 +417,6 @@ ${venda.toLocaleString('pt-BR', {
   `
 
   document.getElementById('reiniciar').addEventListener('click', () => {
-    // Reseta todo o objeto, incluindo os novos campos de contato
     configuracao.perfil = ''
     configuracao.cpu = null
     configuracao.placaMae = null
@@ -428,6 +427,6 @@ ${venda.toLocaleString('pt-BR', {
     configuracao.nome = ''
     configuracao.telefone = ''
     configuracao.cidade = ''
-    telaInicial()
+    irParaTela(telaInicial)
   })
 }
