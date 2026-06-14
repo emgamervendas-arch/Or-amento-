@@ -65,7 +65,7 @@ function limparNumero(valor) {
 function identificarCategoria(nomeProduto) {
   const nome = String(nomeProduto).toLowerCase();
 
-  // PLACA MÃE PRIMEIRO
+  // PLACA MÃE (sempre primeiro)
   if (
     nome.includes('placa mãe') ||
     nome.includes('placa mae') ||
@@ -82,6 +82,7 @@ function identificarCategoria(nomeProduto) {
     nome.includes('z790')
   ) return 'placamae';
 
+  // CPU
   if (
     nome.includes('processador') ||
     nome.includes('ryzen') ||
@@ -89,6 +90,7 @@ function identificarCategoria(nomeProduto) {
     nome.includes('core i')
   ) return 'cpu';
 
+  // GPU
   if (
     nome.includes('rtx') ||
     nome.includes('gtx') ||
@@ -96,19 +98,23 @@ function identificarCategoria(nomeProduto) {
     nome.includes('rx ')
   ) return 'gpu';
 
+  // RAM
   if (
-    nome.includes('memória') ||
     nome.includes('memoria') ||
+    nome.includes('memória') ||
     nome.includes('ram')
   ) return 'ram';
 
+  // SSD
   if (
     nome.includes('ssd') ||
     nome.includes('nvme')
   ) return 'ssd';
 
+  // FONTE
   if (nome.includes('fonte')) return 'fonte';
 
+  // GABINETE
   if (nome.includes('gabinete')) return 'gabinete';
 
   return 'acessorios';
