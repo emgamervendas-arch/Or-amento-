@@ -16,18 +16,18 @@ const dadosCliente = {
   tipoFluxo: '' // 'pc-gamer', 'pc-trabalho', 'kit-upgrade', 'pecas-avulsas'
 }
 
-// Peças padrão de backup
+// Peças padrão de backup (todas iniciam com ativo: true)
 const pecasPadrao = [
-  { id: 1, categoria: 'cpu', nome: 'Ryzen 5 5600', preco: 750, custo: 650, quantidade: 10, socket: 'AM4' },
-  { id: 2, categoria: 'cpu', nome: 'Ryzen 7 7800X3D', preco: 2800, custo: 2500, quantidade: 5, socket: 'AM5' },
-  { id: 4, categoria: 'placamae', nome: 'B550M AM4', preco: 750, custo: 650, quantidade: 10, socket: 'AM4' },
-  { id: 7, categoria: 'gpu', nome: 'RTX 4060', preco: 1900, custo: 1750, quantidade: 6 },
-  { id: 10, categoria: 'ram', nome: '16GB DDR4', preco: 300, custo: 220, quantidade: 20 },
-  { id: 12, categoria: 'ssd', nome: '1TB NVMe', preco: 450, custo: 350, quantidade: 10 },
-  { id: 13, categoria: 'fonte', nome: 'Fonte 650W Corsair', preco: 390, custo: 310, quantity: 8 },
-  { id: 14, categoria: 'gabinete', nome: 'RGB Gamer Mancer', preco: 350, custo: 250, quantidade: 9 },
-  { id: 20, categoria: 'kit-upgrade', nome: 'Kit Upgrade Ryzen 5 5600 + B550M + 16GB RAM', preco: 1650, custo: 1400, quantidade: 4 },
-  { id: 30, categoria: 'acessorios', nome: 'Mouse Gamer Logitech G203', preco: 150, custo: 90, quantidade: 15 }
+  { id: 1, categoria: 'cpu', nome: 'Ryzen 5 5600', preco: 750, custo: 650, quantidade: 10, socket: 'AM4', ativo: true },
+  { id: 2, categoria: 'cpu', nome: 'Ryzen 7 7800X3D', preco: 2800, custo: 2500, quantidade: 5, socket: 'AM5', ativo: true },
+  { id: 4, categoria: 'placamae', nome: 'B550M AM4', preco: 750, custo: 650, quantidade: 10, socket: 'AM4', ativo: true },
+  { id: 7, categoria: 'gpu', nome: 'RTX 4060', preco: 1900, custo: 1750, quantidade: 6, ativo: true },
+  { id: 10, categoria: 'ram', nome: '16GB DDR4', preco: 300, custo: 220, quantidade: 20, ativo: true },
+  { id: 12, categoria: 'ssd', nome: '1TB NVMe', preco: 450, custo: 350, quantidade: 10, ativo: true },
+  { id: 13, categoria: 'fonte', nome: 'Fonte 650W Corsair', preco: 390, custo: 310, quantidade: 8, ativo: true },
+  { id: 14, categoria: 'gabinete', nome: 'RGB Gamer Mancer', preco: 350, custo: 250, quantidade: 9, ativo: true },
+  { id: 20, categoria: 'kit-upgrade', nome: 'Kit Upgrade Ryzen 5 5600 + B550M + 16GB RAM', preco: 1650, custo: 1400, quantidade: 4, ativo: true },
+  { id: 30, categoria: 'acessorios', nome: 'Mouse Gamer Logitech G203', preco: 150, custo: 90, quantidade: 15, ativo: true }
 ]
 
 if (!localStorage.getItem('produtos')) {
@@ -40,10 +40,51 @@ function obterProdutos() {
 
 function buscarProdutos(categoriaAlvo) {
   const produtos = obterProdutos()
-  return produtos.filter(p => p.categoria && p.categoria.toLowerCase() === categoriaAlvo.toLowerCase())
+  return produtos.filter(p => 
+    p.categoria && 
+    p.categoria.toLowerCase() === categoriaAlvo.toLowerCase() && 
+    p.ativo !== false && 
+    p.ativo !== "false"
+  )
 }
 
-// Vincula funções ao objeto window para garantir funcionamento seguro no escopo global
+// Funções utilitárias de limpeza e categorização inteligente
+function limparNumero(valor) {
+  if (valor === null || valor === undefined) return 0;
+  if (typeof valor === 'number') return valor;
+  let str = String(valor).trim();
+  if (str.includes(',') && str.includes('.')) {
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else if (str.includes(',')) {
+    str = str.replace(',', '.');
+  }
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+}
+
+function identificarCategoria(nomeProduto) {
+  const nome = String(nomeProduto).toLowerCase();
+  if (nome.includes('cooler') || nome.includes('water cooler') || nome.includes('ventoinha') || nome.includes('fan')) return 'gabinete'; 
+  if (nome.includes('processador') || nome.includes('ryzen') || nome.includes('intel') || nome.includes('core i')) return 'cpu';
+  if (nome.includes('placa mae') || nome.includes('placa-mãe') || nome.includes('b550') || nome.includes('a520') || nome.includes('h610') || nome.includes('b660')) return 'placamae';
+  if (nome.includes('gforce') || nome.includes('rtx') || nome.includes('gtx') || nome.includes('radeon') || nome.includes('rx ') || nome.includes('placa de video') || nome.includes('placa de vídeo')) return 'gpu';
+  if (nome.includes('memoria') || nome.includes('memória') || nome.includes('ddr4') || nome.includes('ddr5') || nome.includes('ram')) return 'ram';
+  if (nome.includes('ssd') || nome.includes('hd sata') || nome.includes('nvme')) return 'ssd';
+  if (nome.includes('fonte') || nome.includes('watts') || nome.includes('650w') || nome.includes('500w') || nome.includes('750w')) return 'fonte';
+  if (nome.includes('gabinete')) return 'gabinete';
+  if (nome.includes('kit upgrade') || nome.includes('combo')) return 'kit-upgrade';
+  return 'acessorios';
+}
+
+function extrairSocket(nomeProduto) {
+  const nome = String(nomeProduto).toUpperCase();
+  if (nome.includes('AM4')) return 'AM4';
+  if (nome.includes('AM5')) return 'AM5';
+  if (nome.includes('LGA1700') || nome.includes('1700')) return 'LGA1700';
+  if (nome.includes('LGA1200') || nome.includes('1200')) return 'LGA1200';
+  return '';
+}
+
 window.telaAnterior = telaAnterior
 window.telaInicial = telaInicial
 
@@ -63,7 +104,7 @@ function telaAnterior() {
   }
 }
 
-// Ouvinte de teclado secreto para o Admin (Configurado para F8)
+// Ouvinte de teclado para o Admin (Configurado para F8)
 function detectarAtalhoAdmin(e) {
   if (e.key === 'F8' && historicoTelas.length <= 1) {
     e.preventDefault();
@@ -143,7 +184,7 @@ function telaRoteadorCategorias() {
   })
 }
 
-// --- ESTEIRA SEQUENCIAL: PC COMPLETO ---
+// --- ESTEIRA SEQUENCIAL COMPLETA ---
 const sequenciaPecas = ['cpu', 'placamae', 'gpu', 'ram', 'ssd', 'fonte', 'gabinete']
 const nomesCategorias = {
   cpu: 'Processador',
@@ -157,6 +198,21 @@ const nomesCategorias = {
 
 function telaFluxoPC(categoriaAtual) {
   let produtosBase = buscarProdutos(categoriaAtual);
+  
+  produtosBase = produtosBase.filter(p => {
+    const nome = p.nome.toUpperCase();
+    switch(categoriaAtual) {
+      case 'cpu': return (nome.includes('PROCESSADOR') || nome.includes('RYZEN') || nome.includes('CORE I')) && !nome.includes('PLACA MÃE') && !nome.includes('COOLER');
+      case 'placamae': return (nome.includes('PLACA MÃE') || nome.includes('PLACA-MÃE') || nome.includes('MOTHERBOARD'));
+      case 'ram': return (nome.includes('MEMÓRIA') || nome.includes('MEMORIA DDR') || nome.includes('RAM')) && !nome.includes('SSD');
+      case 'ssd': return (nome.includes('SSD') || nome.includes('NVME') || nome.includes('M.2'));
+      case 'gpu': return (nome.includes('PLACA DE VÍDEO') || nome.includes('PLACA DE VIDEO') || nome.includes('RTX') || nome.includes('RX ') || nome.includes('GTX'));
+      case 'fonte': return (nome.includes('FONTE') || nome.includes('WATS') || nome.includes('500W') || nome.includes('650W') || nome.includes('750W'));
+      case 'gabinete': return (nome.includes('GABINETE'));
+      default: return true;
+    }
+  });
+
   if (categoriaAtual === 'placamae') {
     const cpuSelecionada = carrinho.find(item => item.categoria === 'cpu');
     if (cpuSelecionada && cpuSelecionada.socket) {
@@ -164,10 +220,7 @@ function telaFluxoPC(categoriaAtual) {
     }
   }
 
-  const prosseguir = (item) => {
-    carrinho = carrinho.filter(i => i.categoria !== categoriaAtual);
-    if (item) carrinho.push(item);
-
+  const avancarParaProximaEtapa = () => {
     const indexAtual = sequenciaPecas.indexOf(categoriaAtual);
     if (indexAtual < sequenciaPecas.length - 1) {
       irParaTela(() => telaFluxoPC(sequenciaPecas[indexAtual + 1]));
@@ -180,41 +233,37 @@ function telaFluxoPC(categoriaAtual) {
     const gridContainer = document.getElementById('grid-produtos');
     if (!gridContainer) return;
 
-    let produtosFiltrados = produtosBase.filter(p => 
-      p.nome.toLowerCase().includes(termoBusca.toLowerCase())
-    );
-    
+    let produtosFiltrados = produtosBase.filter(p => p.nome.toLowerCase().includes(termoBusca.toLowerCase()));
     produtosFiltrados = produtosFiltrados.slice(0, 9);
 
     if (produtosFiltrados.length === 0) {
-      gridContainer.innerHTML = `
-        <div class="card" style="grid-column: 1 / -1; height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed #555;">
-          <h3 style="margin: 0; color: #aaa;">Nenhum item correspondente</h3>
-          <p style="margin: 5px 0 0 0; font-size: 13px; color: #777;">Tente digitar outra palavra-chave.</p>
-        </div>
-      `;
+      gridContainer.innerHTML = `<div class="card" style="grid-column: 1 / -1; height: 120px; color: #aaa;">Nenhum item correspondente nesta categoria</div>`;
       return;
     }
 
-    gridContainer.innerHTML = produtosFiltrados.map(p => `
-      <div class="card item-hardware" data-id="${p.id}" style="height: auto; min-height: 90px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 16px; border: 1px solid #222; border-radius: 10px; background: #141414; box-sizing: border-box; cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
-        <div style="text-align: left; width: 100%; pointer-events: none;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-            <span style="font-size: 10px; background: #222; color: #ff7a00; font-weight: bold; text-transform: uppercase;">${nomesCategorias[categoriaAtual]}</span>
-            ${p.socket ? `<span style="font-size: 11px; color: #00ff88; background: rgba(0,255,136,0.1); padding: 2px 6px; border-radius:4px; font-weight:bold;">${p.socket}</span>` : ''}
+    gridContainer.innerHTML = produtosFiltrados.map(p => {
+      const jaNoCarrinho = carrinho.some(item => item.id === p.id);
+      return `
+        <div class="card item-hardware" data-id="${p.id}" style="border: 2px solid ${jaNoCarrinho ? '#00ff88' : '#222'}; padding: 20px; cursor: pointer; background: #141414;">
+          <div style="text-align: left; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <span style="font-size: 11px; background: #222; color: #ff7a00; font-weight: bold; text-transform: uppercase;">${nomesCategorias[categoriaAtual]}</span>
+              ${p.socket ? `<span style="font-size: 11px; color: #00ff88; background: rgba(0,255,136,0.1); padding: 2px 6px; border-radius:4px;">${p.socket}</span>` : ''}
+            </div>
+            <h3 style="font-size: 15px; margin: 0; color: #fff;">${p.nome}</h3>
           </div>
-          <h3 style="font-size: 14px; line-height: 1.4; margin: 0; color: #fff; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.nome}</h3>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     gridContainer.querySelectorAll('.item-hardware').forEach(card => {
       card.addEventListener('click', () => {
         const idProcurado = Number(card.getAttribute('data-id'));
-        const produto = produtosBase.find(p => Number(p.id) === idProcurado) || obterProdutos().find(p => Number(p.id) === idProcurado);
-        
+        const produto = produtosBase.find(p => Number(p.id) === idProcurado);
         if (produto) {
-          prosseguir(produto);
+          carrinho = carrinho.filter(i => i.categoria !== categoriaAtual && i.categoria !== 'kit-upgrade');
+          carrinho.push(produto);
+          avancarParaProximaEtapa();
         }
       });
     });
@@ -223,54 +272,29 @@ function telaFluxoPC(categoriaAtual) {
   app.innerHTML = `
     <div class="container-step" style="max-width: 1000px; padding: 20px;">
       <button class="btn-voltar" onclick="telaAnterior()">⬅ Voltar</button>
-      <h1 style="margin-bottom: 5px;">Escolha o seu ${nomesCategorias[categoriaAtual]}</h1>
-      <p class="subtitulo-uso" style="margin-bottom: 20px;">Etapa de montagem para o seu PC ${dadosCliente.tipoFluxo === 'pc-gamer' ? 'Gamer 🎮' : 'Profissional 💼'}</p>
-      
-      <div style="width: 100%; margin-bottom: 15px; position: relative;">
-        <input type="text" id="busca-peca" placeholder="🔍 Digite para buscar... (ex: ssd, rtx, i3, b550)" 
-               style="width: 100%; padding: 12px 16px; background: #141414; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 15px; box-sizing: border-box; outline: none; transition: border-color 0.2s;" />
-      </div>
-      
-      <div id="grid-produtos" style="display: grid !important; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; gap: 16px; width: 100%; box-sizing: border-box;">
-      </div>
-
-      ${produtosBase.length === 0 ? `
-        <div id="card-pular" style="margin-top: 15px; height: 80px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed #555; border-radius: 10px;">
-          <h3 style="margin: 0; color: #aaa;">Pular esta etapa</h3>
-        </div>
-      ` : ''}
+      <h1>Escolha o seu ${nomesCategorias[categoriaAtual]}</h1>
+      <input type="text" id="busca-peca" placeholder="🔍 Toque para buscar..." style="width: 100%; padding: 14px; background: #141414; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px;" />
+      <div id="grid-produtos" style="display: grid !important; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; gap: 18px; width: 100%;"></div>
     </div>
   `;
 
-  const inputBusca = document.getElementById('busca-peca');
-  if (inputBusca) {
-    inputBusca.addEventListener('input', (e) => {
-      renderizarLista(e.target.value);
-    });
-  }
-
-  const cardPular = document.getElementById('card-pular');
-  if (cardPular) cardPular.addEventListener('click', () => { prosseguir(null); });
-
+  document.getElementById('busca-peca').addEventListener('input', (e) => renderizarLista(e.target.value));
   renderizarLista();
 }
 
-// --- ESTEIRA FLUIDA: KITS UPGRADE ---
+// --- FLUXO KIT UPGRADE ---
 function telaFluxoKitUpgrade() {
   const kits = buscarProdutos('kit-upgrade')
-
   app.innerHTML = `
     <div class="container-step" style="max-width: 750px;">
       <button class="btn-voltar" onclick="telaAnterior()">⬅ Voltar</button>
       <h1>Combos & Kits Upgrade</h1>
-      <p class="subtitulo-uso">Dê uma vida nova para a sua máquina atual</p>
-      
       <div class="categorias" style="grid-template-columns: 1fr !important; gap: 15px; width:100%;">
-        ${kits.length === 0 ? '<p style="opacity:0.5;">Nenhum kit cadastrado no momento.</p>' : kits.map(k => `
-          <div class="card item-kit" data-id="${k.id}" style="height: 120px; padding: 20px; flex-direction: row; justify-content: space-between; align-items: center;">
-            <div style="text-align: left; max-width: 70%;">
+        ${kits.length === 0 ? '<p style="opacity:0.5;">Nenhum kit cadastrado ou disponível no momento.</p>' : kits.map(k => `
+          <div class="card item-kit" data-id="${k.id}" style="height: 120px; padding: 20px; flex-direction: row; justify-content: space-between; align-items: center; cursor:pointer;">
+            <div style="text-align: left;">
               <h3 style="font-size: 19px; color:#ff7a00; margin:0;">${k.nome}</h3>
-              <p style="font-size: 14px; color:#bbb; margin-top:5px; margin-bottom:0;">Pronto para montagem imediata</p>
+              <p style="font-size: 16px; color:#00ff88; margin-top:5px; font-weight:bold;">R$ ${Number(k.preco).toFixed(2)}</p>
             </div>
             <span style="color:#00ff88; font-weight:bold;">📦 Disponível</span>
           </div>
@@ -278,7 +302,6 @@ function telaFluxoKitUpgrade() {
       </div>
     </div>
   `
-
   document.querySelectorAll('.item-kit').forEach(card => {
     card.addEventListener('click', () => {
       const id = Number(card.dataset.id)
@@ -289,234 +312,229 @@ function telaFluxoKitUpgrade() {
   })
 }
 
-// --- ESTEIRA DIRETA: PEÇAS E ACESSÓRIOS ---
+// --- FLUXO PEÇAS AVULSAS ---
 function telaFluxoPecasAvulsas() {
-  const produtos = obterProdutos().filter(p => p.categoria !== 'kit-upgrade')
-
+  const produtos = obterProdutos().filter(p => p.categoria !== 'kit-upgrade' && p.ativo !== false && p.ativo !== "false")
   app.innerHTML = `
     <div class="container-step" style="max-width: 850px;">
       <button class="btn-voltar" onclick="telaAnterior()">⬅ Voltar</button>
       <h1>Catálogo de Peças e Periféricos</h1>
-      <p class="subtitulo-uso">Selecione os itens desejados clicando neles</p>
-      
-      <input id="buscaCatalogoDireto" placeholder="🔍 O que você procura? (Ex: RTX, Mouse, SSD...)" style="margin-bottom: 20px; width:100%; padding:12px; background:#141414; border:1px solid #333; color:#fff; border-radius:8px;">
-      
+      <input id="buscaCatalogoDireto" placeholder="🔍 O que você procura?" style="margin-bottom: 20px; width:100%; padding:12px; background:#141414; border:1px solid #333; color:#fff; border-radius:8px;">
       <div id="listaGridDireta" class="categorias" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important; gap: 14px; width:100%;"></div>
-      
-      <div id="barraCarrinhoFlutuante" style="width:100%; background:#111; border: 2px solid #ff7a00; border-radius:15px; padding:15px; margin-top:30px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box;">
-        <div style="text-align:left;">
-          <span style="font-size:14px; color:#aaa;">Itens no orçamento:</span>
-          <h2 id="totalItensCarrinho" style="font-size:20px; margin:0; color:#fff;">0 itens selecionados</h2>
-        </div>
-        <button id="btnAvancarCarrinho" class="btn-start" style="padding:12px 24px; font-size:16px; border-radius:8px; width:auto; margin:0;">🛒 Concluir Separação</button>
+      <div style="width:100%; background:#111; border: 2px solid #ff7a00; border-radius:15px; padding:15px; margin-top:30px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box;">
+        <h2 id="totalItensCarrinho" style="font-size:20px; margin:0; color:#fff;">0 itens selecionados</h2>
+        <button id="btnAvancarCarrinho" class="btn-start" style="width:auto; margin:0; padding:12px 24px;">🛒 Concluir Separação</button>
       </div>
     </div>
   `
-
   const renderizarGrid = (itensFiltrados) => {
     const grid = document.getElementById('listaGridDireta')
     if (!grid) return
-
     grid.innerHTML = itensFiltrados.map(p => {
       const jaNoCarrinho = carrinho.some(item => item.id === p.id)
       return `
-        <div class="card item-avulso-card" data-id="${p.id}" style="height: 140px; padding: 15px; border-color: ${jaNoCarrinho ? '#00ff88' : '#222'}; text-align: left; display:flex; flex-direction:column; justify-content:space-between;">
-          <div>
-            <span style="font-size: 11px; background: #222; padding: 3px 8px; border-radius: 4px; color: #ff7a00; font-weight: bold; text-transform: uppercase;">${p.categoria}</span>
-            <h3 style="font-size: 16px; margin-top: 8px; line-height: 1.3; color:#fff; margin-bottom:0;">${p.nome}</h3>
+        <div class="card item-avulso-card" data-id="${p.id}" style="height: 150px; border-color: ${jaNoCarrinho ? '#00ff88' : '#222'}; text-align: left; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer;">
+          <div><h3 style="font-size: 15px; color:#fff; margin:0;">${p.nome}</h3></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <span style="color:#00ff88; font-weight:bold;">R$ ${Number(p.preco).toFixed(2)}</span>
+            <span>${jaNoCarrinho ? '✓ OK' : '+ Adicionar'}</span>
           </div>
-          ${jaNoCarrinho ? '<span style="font-size:11px; color:#00ff88; font-weight:bold;">✓ ADICIONADO</span>' : '<span style="font-size:11px; color:#555;">+ Adicionar ao pedido</span>'}
         </div>
       `
     }).join('')
 
-    document.querySelectorAll('.item-avulso-card').forEach(card => {
+    grid.querySelectorAll('.item-avulso-card').forEach(card => {
       card.addEventListener('click', () => {
         const id = Number(card.dataset.id)
         const produto = obterProdutos().find(p => p.id === id)
         const index = carrinho.findIndex(item => item.id === id)
-
-        if (index > -1) {
-          carrinho.splice(index, 1)
-        } else {
-          carrinho.push(produto)
-        }
-        
-        atualizarIndicadoresCarrinho(itensFiltrados)
+        if (index > -1) { carrinho.splice(index, 1) } else { carrinho.push(produto) }
+        document.getElementById('totalItensCarrinho').innerText = `${carrinho.length} item(ns) selecionado(s)`
+        renderizarGrid(itensFiltrados)
       })
     })
   }
-
-  const atualizarIndicadoresCarrinho = (listaAtual) => {
-    document.getElementById('totalItensCarrinho').innerText = `${carrinho.length} item(ns) selecionado(s)`
-    renderizarGrid(listaAtual)
-  }
-
   document.getElementById('buscaCatalogoDireto').addEventListener('input', (e) => {
-    const busca = e.target.value.toLowerCase()
-    const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(busca) || p.categoria.toLowerCase().includes(busca))
+    const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(e.target.value.toLowerCase()))
     renderizarGrid(filtrados)
   })
-
   document.getElementById('btnAvancarCarrinho').addEventListener('click', () => {
-    if (carrinho.length === 0) {
-      alert('Selecione pelo menos uma peça ou acessório para prosseguir!')
-      return
-    }
+    if (carrinho.length === 0) { alert('Selecione itens!'); return; }
     irParaTela(telaDadosCliente)
   })
-
   renderizarGrid(produtos)
 }
 
-// --- TELA DE CAPTURA DE DADOS ---
 function telaDadosCliente() {
   app.innerHTML = `
     <div class="container-step">
       <button class="btn-voltar" onclick="telaAnterior()">⬅ Voltar</button>
-      <h2>Insira seus dados para concluir o orçamento</h2>
-      <input type="text" id="input-nome" placeholder="Digite seu Nome...">
-      <input type="text" id="input-telefone" placeholder="Digite seu Telefone (WhatsApp)...">
-      <input type="text" id="input-cidade" placeholder="Digite sua Cidade...">
-      
+      <h2>Insira seus dados para concluir</h2>
+      <input type="text" id="input-nome" placeholder="Seu Nome...">
+      <input type="text" id="input-telefone" placeholder="Seu Telefone...">
+      <input type="text" id="input-cidade" placeholder="Sua Cidade...">
       <button id="btnAvancarDados" class="btn-start" style="margin-top:20px;">Avançar</button>
     </div>
   `;
-
-  document.getElementById('btnAvancarDados').addEventListener('click', salvarDadosEAvancar);
+  document.getElementById('btnAvancarDados').addEventListener('click', () => {
+    dadosCliente.nome = document.getElementById('input-nome').value.trim();
+    dadosCliente.telefone = document.getElementById('input-telefone').value.trim();
+    dadosCliente.cidade = document.getElementById('input-cidade').value.trim();
+    if (!dadosCliente.nome || !dadosCliente.telefone || !dadosCliente.cidade) { alert('Preencha tudo!'); return; }
+    irParaTela(telaResumo);
+  });
 }
 
-function salvarDadosEAvancar() {
-  const inputNome = document.getElementById('input-nome');
-  const inputTelefone = document.getElementById('input-telefone');
-  const inputCidade = document.getElementById('input-cidade');
-
-  const nomeVal = inputNome ? inputNome.value.trim() : '';
-  const telVal = inputTelefone ? inputTelefone.value.trim() : '';
-  const cidVal = inputCidade ? inputCidade.value.trim() : '';
-
-  if (!nomeVal || !telVal || !cidVal) {
-    alert('⚠️ Atenção: Você precisa preencher Nome, Telefone e Cidade para gerar o orçamento!');
-    return;
-  }
-
-  dadosCliente.nome = nomeVal;
-  dadosCliente.telefone = telVal;
-  dadosCliente.cidade = cidVal;
-
-  irParaTela(telaResumo);
-}
-
-// --- RESUMO FINAL E ENVIO DO WHATSAPP ---
 function telaResumo() {
   const totalGeral = carrinho.reduce((acc, item) => acc + (item.preco || 0), 0);
-
-  const tagsFluxo = {
-    'pc-gamer': '🎮 CONFIGURAÇÃO PC GAMER',
-    'pc-trabalho': '💼 CONFIGURAÇÃO PC WORKSTATION',
-    'kit-upgrade': '📦 COMBO KIT UPGRADE',
-    'pecas-avulsas': '🔌 COMPONENTES E PERIFÉRICOS'
-  };
-
+  
   app.innerHTML = `
-    <div class="container-step" style="max-width: 680px;">
-      <button class="btn-voltar" id="btnVoltarResumo">⬅ Voltar</button>
+    <div class="container-step" style="max-width: 680px; padding: 20px;">
+      <button class="btn-voltar" onclick="telaAnterior()" style="margin-bottom: 10px;">⬅ Voltar</button>
       <h1>Seu Orçamento Provisório</h1>
       
-      <div class="resultado" style="width:100%; text-align:left;">
-        <h3 style="color:#ff7a00; margin-bottom:15px; font-size:22px; text-align:center;">📋 Resumo do Pedido</h3>
-        
-        <div style="background:#1c1c1c; padding:15px; border-radius:10px; margin-bottom:20px; font-size:15px; line-height:1.6;">
-          <p><b>Cliente:</b> ${dadosCliente.nome || 'Não informado'}</p>
-          <p><b>Tipo de Atendimento:</b> ${tagsFluxo[dadosCliente.tipoFluxo] || 'Geral'}</p>
-        </div>
-
-        <div class="specs" style="margin: 0 0 20px 0;">
-          ${carrinho.map((item, index) => `
-            <div style="padding:14px 10px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center; font-size:15px;">
-              <span style="color:#fff; text-transform: uppercase; font-weight: 500;">✓ ${item.nome}</span>
-              <div style="display:flex; align-items:center; gap:10px;">
-                <button class="btn-remover" data-index="${index}" style="background:transparent; border:none; color:#ff4444; cursor:pointer; font-size:16px; padding:5px 10px;">🗑️</button>
-              </div>
+      <div class="resultado" style="width:100%; background: #111; padding: 20px; border-radius: 10px; border: 1px solid #ff7a00;">
+        <div id="lista-carrinho-resumo">
+          ${carrinho.map((item, idx) => `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #222;">
+              <span style="color: #fff;">✓ ${item.nome}</span>
+              <button class="btn-deletar-item" data-index="${idx}" style="background: transparent; border:none; cursor:pointer; font-size: 18px;">🗑️</button>
             </div>
-           `).join('')}
+          `).join('')}
         </div>
+        
+        <h2 style="color:#00ff88; text-align:center; margin: 20px 0;">Total: R$ ${totalGeral.toFixed(2)}</h2>
+        
+        <button id="btn-enviar-final" style="width:100%; padding:14px; background:#00e676; border:none; font-weight:bold; cursor:pointer; border-radius:8px; margin-bottom: 10px; color:#000;">📲 Enviar Orçamento no WhatsApp</button>
+        <button id="btn-novo-orcamento" style="width:100%; padding:10px; background:transparent; border: 1px solid #444; color: #fff; cursor:pointer; border-radius:8px;">🔄 Iniciar Novo Orçamento</button>
 
-        <div class="preco" style="text-align:center; margin: 20px 0 5px 0; color: #00ff88; font-size: 32px; font-weight: bold;">R$ ${totalGeral.toFixed(2)}</div>
-        
-        <div class="trust-container" style="background: #141414; border: 1px solid #222; border-radius: 10px; padding: 15px; margin-bottom: 25px; text-align: center;">
-          
-          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid #222; padding-bottom: 10px;">
-            <span style="font-size: 18px;">🔍</span>
-            <span style="color: #fff; font-size: 13px; font-weight: 500; letter-spacing: 0.5px;">Loja Parceira do Site <b style="color: #ff7a00; text-transform: uppercase;">boadica.com.br</b></span>
-          </div>
-          
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-            <span style="font-size: 11px; color: #777; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Formas de Pagamento Aceitas</span>
-            <div style="display: flex; justify-content: center; align-items: center; gap: 14px; font-size: 24px; filter: grayscale(20%); padding-top: 4px;">
-              <span title="Visa" style="cursor: default;">💳</span>
-              <span title="Mastercard" style="font-size: 13px; color: #aaa; background: #222; padding: 4px 8px; border-radius: 4px; font-weight: bold;">VISA / MASTER</span>
-              <span title="Elo / Hipercard" style="font-size: 13px; color: #aaa; background: #222; padding: 4px 8px; border-radius: 4px; font-weight: bold;">ELO</span>
-              <span title="Pix" style="font-size: 13px; color: #00ff88; background: rgba(0,255,136,0.1); padding: 4px 8px; border-radius: 4px; font-weight: bold;">❖ PIX</span>
-            </div>
-          </div>
-          
-        </div>
-        
-        <div class="botoes" style="display:flex; flex-direction:column; gap:10px;">
-          <button id="btn-enviar-final" class="btn-whatsapp" style="text-align:center; width:100%; padding:14px 0; background: #00e676; color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">📲 Enviar Pedido no WhatsApp</button>
-          <button id="btnReiniciarTudo" class="btn-start" style="background:#222; border:1px solid #ff7a00; color: #ff7a00; font-size:16px; padding:12px 0; border-radius:10px; width:100%; cursor:pointer;">🔄 Montar Outra Configuração</button>
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #333; font-size: 12px; color: #888; text-align: center;">
+          <p>🚚 <strong>Entregamos para todo o Brasil!</strong></p>
+          <p>💳 Aceitamos: Visa, Mastercard, Amex e PIX</p>
+          <div style="margin-top: 10px; font-weight: bold; color: #ff7a00;">Loja parceira do BOADICA</div>
         </div>
       </div>
     </div>
   `;
 
-  document.querySelectorAll('.btn-remover').forEach(botao => {
-    botao.addEventListener('click', (e) => {
-      const indexRemover = parseInt(e.currentTarget.getAttribute('data-index'));
-      carrinho.splice(indexRemover, 1);
+  // Lógica para deletar item
+  document.querySelectorAll('.btn-deletar-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      carrinho.splice(e.target.dataset.index, 1);
       telaResumo();
     });
   });
 
-  document.getElementById('btn-enviar-final').addEventListener('click', () => {
-    let linhasPecasZap = '';
-    carrinho.forEach((item, index) => {
-      linhasPecasZap += `${index + 1}. ${item.nome} - R$ ${Number(item.preco).toFixed(2)}\n`;
-    });
-
-    const textoZap = `🖥️ NOVO ORÇAMENTO - LEAL TECH\n---------------------------------\n📌 Modalidade: ${tagsFluxo[dadosCliente.tipoFluxo] || '🛒 Venda Direta'}\n👤 Cliente: ${dadosCliente.nome || 'Não informado'}\n📱 Telefone: ${dadosCliente.telefone || 'Não informado'}\n📍 Local: ${dadosCliente.cidade || 'Não informada'}\n---------------------------------\n📦 ITENS DO PEDIDO:\n${linhasPecasZap}---------------------------------\n💰 VALOR TOTAL: R$ ${totalGeral.toFixed(2)}\n\n*Valores sujeitos a alteração conforme estoque.`;
-    const linkWhatsApp = `https://wa.me/5521971301860?text=${encodeURIComponent(textoZap)}`;
-    window.open(linkWhatsApp, '_blank');
+  // Botões de ação
+  document.getElementById('btn-novo-orcamento').addEventListener('click', () => {
+    carrinho = [];
+    telaInicial();
   });
 
-  document.getElementById('btnReiniciarTudo').addEventListener('click', () => irParaTela(telaInicial));
-  document.getElementById('btnVoltarResumo').addEventListener('click', () => telaAnterior());
+  document.getElementById('btn-enviar-final').addEventListener('click', () => {
+    let msg = `🖥️ ORÇAMENTO - BOADICA\n\n`;
+    carrinho.forEach(i => msg += `- ${i.nome}\n`);
+    msg += `\n💰 TOTAL: R$ ${totalGeral.toFixed(2)}\n\nAceitamos Cartões (Visa, Master, Amex) e PIX. Fazemos entregas!`;
+    window.open(`https://wa.me/5521971301860?text=${encodeURIComponent(msg)}`, '_blank');
+  });
 }
 
-// --- INTERFACE DO PAINEL ADMIN ---
+// --- INTERFACE DO PAINEL ADMIN (CORRIGIDA E OTIMIZADA) ---
 function abrirAdmin() {
   const senha = prompt('Digite a senha do painel')
-  if (senha !== '1234') {
-    alert('Senha incorreta')
-    window.addEventListener('keydown', detectarAtalhoAdmin);
-    return
-  }
+  if (senha !== '1234') { alert('Senha incorreta'); window.addEventListener('keydown', detectarAtalhoAdmin); return; }
   telaAdmin()
+}
+
+// Funções globais associadas ao escopo window
+window.alternarStatusProduto = function(id) {
+  const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+  const atualizados = produtos.map(p => p.id === id ? { ...p, ativo: !(p.ativo === undefined || p.ativo === true || p.ativo === "true") } : p);
+  localStorage.setItem('produtos', JSON.stringify(atualizados));
+  window.renderizarLinhasTabelaAdmin();
+}
+
+window.alterarStatusTodos = function(statusAlvo) {
+  const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+  const atualizados = produtos.map(p => ({ ...p, ativo: statusAlvo }));
+  localStorage.setItem('produtos', JSON.stringify(atualizados));
+  window.renderizarLinhasTabelaAdmin();
+}
+
+window.zerarTodoEstoque = function() {
+  if (confirm("⚠️ ATENÇÃO: Tem certeza que deseja ZERAR permanentemente o banco de dados do sistema?")) {
+    localStorage.setItem('produtos', JSON.stringify([]));
+    telaAdmin();
+  }
+}
+
+window.deletarProdutoAdmin = function(id) {
+  if (confirm("Remover este item permanentemente?")) {
+    const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+    localStorage.setItem('produtos', JSON.stringify(produtos.filter(p => p.id !== id)));
+    telaAdmin();
+  }
+}
+
+// Renderizador focado apenas nas linhas (Impede o bug de digitar ao contrário)
+window.renderizarLinhasTabelaAdmin = function() {
+  const tbody = document.getElementById('corpoTabelaAdmin');
+  const contadorTitulo = document.getElementById('contadorProdutosTitulo');
+  if (!tbody) return;
+
+  const listaProdutos = JSON.parse(localStorage.getItem('produtos')) || [];
+  const termoFiltro = document.getElementById('buscaAdminInput') ? document.getElementById('buscaAdminInput').value.toLowerCase() : "";
+
+  const produtosFiltrados = listaProdutos.filter(p => 
+    p.nome.toLowerCase().includes(termoFiltro) || 
+    p.categoria.toLowerCase().includes(termoFiltro)
+  );
+
+  if (contadorTitulo) {
+    contadorTitulo.innerText = `Produtos em Estoque (${produtosFiltrados.length})`;
+  }
+
+  tbody.innerHTML = produtosFiltrados.map(p => {
+    const itemAtivo = (p.ativo === undefined || p.ativo === true || p.ativo === "true");
+    return `
+    <tr style="border-bottom: 1px solid #1a1a1a; background: ${itemAtivo ? 'transparent' : 'rgba(255,0,0,0.03)'}">
+      <td style="padding: 12px 8px; font-weight: 500; color: ${itemAtivo ? '#fff' : '#666'};">${p.nome}</td>
+      <td style="padding: 12px 8px; color: #aaa; text-transform: uppercase;">${p.categoria}</td>
+      <td style="padding: 12px 8px; font-weight: bold;">${p.quantidade || 0}</td>
+      <td style="padding: 12px 8px; color: #ff7a00;">R$ ${Number(p.custo || 0).toFixed(2)}</td>
+      <td style="padding: 12px 8px; color: #00ff88; font-weight: bold;">R$ ${Number(p.preco || 0).toFixed(2)}</td>
+      
+      <td style="padding: 6px 8px; text-align: center;">
+        <button onclick="alternarStatusProduto(${p.id})" style="padding: 4px 10px; font-size: 11px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; width: 100px; background: ${itemAtivo ? '#00ff88' : '#ff4444'}; color: ${itemAtivo ? '#000' : '#fff'}; transition: 0.2s;">
+          ${itemAtivo ? '🟢 ATIVAR' : '🔴 OCULTAR'}
+        </button>
+      </td>
+
+      <td style="padding: 6px 8px; text-align: center;">
+        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+          <button style="background: #ff7a00; color: #000; border: none; border-radius: 3px; font-size: 10px; font-weight: bold; padding: 4px 8px; cursor: pointer;">EDIT</button>
+          <button onclick="deletarProdutoAdmin(${p.id})" style="background: transparent; border: none; color: #ff4444; cursor: pointer; font-size: 13px; padding: 2px;">🗑️</button>
+        </div>
+      </td>
+    </tr>
+    `;
+  }).join('');
 }
 
 function telaAdmin() {
   app.innerHTML = `
-    <div class="container-step" style="max-width: 100% !important; width: 100% !important; padding: 10px 4px !important; min-height: auto !important;">
-      <button class="btn-voltar" onclick="telaInicial()">⬅ Voltar</button>
-      <h1 style="font-size:1.8em; margin-bottom:15px; text-align:center; width: 100%;">Painel Administrativo</h1>
-      
-      <div class="resultado-admin" style="width: 100% !important; max-width: 1200px; background: #111; border: 1px solid #ff7a00; border-radius: 12px; padding: 15px 8px; box-sizing: border-box; margin: 0 auto;">
+    <div class="container-step" style="max-width: 100% !important; width: 100% !important; padding: 20px !important; background: #000; box-sizing: border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:1200px; margin: 0 auto 15px auto;">
+        <button class="btn-voltar" onclick="telaInicial()" style="margin:0;">⬅ Voltar ao Totem</button>
+        <span style="color:#ff7a00; font-weight:bold; font-size:14px;">PAINEL ADMINISTRATIVO</span>
+      </div>
+
+      <div style="width: 100% !important; max-width: 1200px; background: #0a0a0a; border: 1px solid #ff7a00; border-radius: 6px; padding: 20px; box-sizing: border-box; margin: 0 auto;">
         
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:15px; width: 100%; box-sizing: border-box;">
+        <div style="display: grid; grid-template-columns: 1.2fr 1.8fr 1fr 0.8fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
           <div>
-            <label style="font-size:0.8em; font-weight:bold; color:#aaa; display:block; margin-bottom:4px; text-align:left;">Categoria</label>
-            <select id="categoriaProduto" style="width:100% !important; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; height:40px; box-sizing:border-box; margin:0;">
+            <label style="font-size: 11px; font-weight: bold; color: #ff7a00; display: block; margin-bottom: 5px; text-align: left;">Categoria</label>
+            <select id="categoriaProduto" style="width: 100%; padding: 8px; background: #1c1c1c; color: #fff; border: 1px solid #333; border-radius: 4px; height: 38px;">
               <option value="cpu">CPU (Processador)</option>
               <option value="placamae">Placa-Mãe</option>
               <option value="gpu">GPU (Placa de Vídeo)</option>
@@ -525,191 +543,239 @@ function telaAdmin() {
               <option value="fonte">Fonte</option>
               <option value="gabinete">Gabinete</option>
               <option value="kit-upgrade">📦 Kit Upgrade</option>
-              <option value="acessorios">🎧 Peças / Acessórios</option>
+              <option value="acessorios">ACESSORIOS</option>
             </select>
           </div>
-          <div style="grid-column: span 1; min-width:140px;">
-            <label style="font-size:0.8em; font-weight:bold; color:#aaa; display:block; margin-bottom:4px; text-align:left;">Nome do Produto</label>
-            <input id="nomeProduto" placeholder="Ex: Ryzen 5 5600" style="width:100% !important; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; height:40px; box-sizing:border-box; margin:0;">
+          <div>
+            <label style="font-size: 11px; font-weight: bold; color: #ff7a00; display: block; margin-bottom: 5px; text-align: left;">Nome do Produto</label>
+            <input id="nomeProduto" placeholder="Ex: Ryzen 5 5600" style="width: 100%; padding: 8px; background: #1c1c1c; color: #fff; border: 1px solid #333; border-radius: 4px; height: 38px; box-sizing: border-box;">
           </div>
           <div>
-            <label style="font-size:0.8em; font-weight:bold; color:#aaa; display:block; margin-bottom:4px; text-align:left;">Socket</label>
-            <input id="socketProduto" placeholder="Ex: AM4 / AM5" style="width:100% !important; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; height:40px; box-sizing:border-box; margin:0;">
+            <label style="font-size: 11px; font-weight: bold; color: #ff7a00; display: block; margin-bottom: 5px; text-align: left;">Socket</label>
+            <input id="socketProduto" placeholder="Ex: AM4 / AM5" style="width: 100%; padding: 8px; background: #1c1c1c; color: #fff; border: 1px solid #333; border-radius: 4px; height: 38px; box-sizing: border-box;">
           </div>
           <div>
-            <label style="font-size:0.8em; font-weight:bold; color:#aaa; display:block; margin-bottom:4px; text-align:left;">Estoque</label>
-            <input id="quantidadeProduto" type="number" placeholder="Qtd" style="width:100% !important; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; height:40px; box-sizing:border-box; margin:0;">
+            <label style="font-size: 11px; font-weight: bold; color: #ff7a00; display: block; margin-bottom: 5px; text-align: left;">Estoque</label>
+            <input id="quantidadeProduto" type="number" placeholder="Qtd" style="width: 100%; padding: 8px; background: #1c1c1c; color: #fff; border: 1px solid #333; border-radius: 4px; height: 38px; box-sizing: border-box;">
           </div>
           <div>
-            <label style="font-size:0.8em; font-weight:bold; color:#aaa; display:block; margin-bottom:4px; text-align:left;">Custo (R$)</label>
-            <input id="custoProduto" type="number" placeholder="Custo" style="width:100% !important; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; height:40px; box-sizing:border-box; margin:0;">
+            <label style="font-size: 11px; font-weight: bold; color: #ff7a00; display: block; margin-bottom: 5px; text-align: left;">Custo (R$)</label>
+            <input id="custoProduto" placeholder="Custo" style="width: 100%; padding: 8px; background: #1c1c1c; color: #fff; border: 1px solid #333; border-radius: 4px; height: 38px; box-sizing: border-box;">
           </div>
           <div>
-            <label style="font-size:0.8em; font-weight:bold; color:#aaa; display:block; margin-bottom:4px; text-align:left;">Venda (R$)</label>
-            <input id="precoProduto" type="number" placeholder="Venda" style="width:100% !important; padding:8px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; height:40px; box-sizing:border-box; margin:0;">
+            <label style="font-size: 11px; font-weight: bold; color: #ff7a00; display: block; margin-bottom: 5px; text-align: left;">Venda (R$)</label>
+            <input id="precoProduto" placeholder="Venda" style="width: 100%; padding: 8px; background: #1c1c1c; color: #fff; border: 1px solid #333; border-radius: 4px; height: 38px; box-sizing: border-box;">
           </div>
         </div>
 
-        <button id="btnSalvarProduto" class="btn-start" style="width:100% !important; margin-bottom:15px; height:44px; padding:0; font-size:16px; border-radius:8px;">Salvar Produto Manual</button>
-        
-        <div style="margin: 15px 0; border: 2px dashed #444; padding: 12px; border-radius: 8px; background:#111; text-align:center; box-sizing: border-box; width: 100%;">
-          <label style="display:block; margin-bottom:6px; font-weight:bold; color:#fff; font-size:0.9em;">📁 Importar Catálogo Completo (Excel/Bling):</label>
-          <input type="file" id="arquivoExcel" accept=".xlsx,.xls" style="color:#ccc; font-size:0.85em; margin-bottom:10px; width:100% !important;">
-          <button id="btnImportarExcel" class="btn-secundario" style="width:100% !important; background:#2ecc71; color:#fff; font-weight:bold; border:none; height:38px; margin:0; font-size:14px; border-radius:6px;">Processar e Atualizar Estoque</button>
+        <button id="btnSalvarProduto" style="width: 100%; padding: 10px; background: #ff7a00; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; margin-bottom: 20px;">Salvar Produto Manual</button>
+
+        <div style="border: 1px dashed #333; padding: 15px; border-radius: 4px; margin-bottom: 12px; text-align: left; background: #111;">
+          <div style="display:flex; align-items:center; gap:6px; font-size: 13px; font-weight: bold; color: #fff; margin-bottom: 10px;">
+            <span>📁</span> Importar Catálogo Completo (Excel/CSV):
+          </div>
+          <input type="file" id="uploadPlanilha" accept=".xlsx" style="color: #aaa; font-size: 13px; margin-bottom: 12px; display: block;">
+          <button id="btnProcessarPlanilha" style="width: 100%; padding: 10px; background: #2ecc71; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Processar e Atualizar Estoque</button>
         </div>
 
-        <button id="btnLimparBanco" class="btn-secundario" style="background:#d9534f; color:#fff; width:100% !important; border:none; margin-bottom:20px; height:38px; margin-top:0; font-size:14px; border-radius:6px;">🚨 ZERAR TODO O ESTOQUE DO SISTEMA</button>
-        <hr style="border-color:#333; margin:15px 0;">
-        
-        <div id="listaProdutos" style="width: 100%; box-sizing: border-box;"></div>
+        <button onclick="zerarTodoEstoque()" style="width: 100%; padding: 10px; background: #e74c3c; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 25px;">🚨 ZERAR TODO O ESTOQUE DO SISTEMA</button>
+
+        <div style="position: relative; margin-bottom: 20px;">
+          <input id="buscaAdminInput" placeholder="🔍 Buscar produto no estoque..." style="width: 100%; padding: 12px 12px 12px 35px; background: #111; border: 1px solid #222; border-radius: 4px; color: #fff; box-sizing: border-box;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #222;">
+          <h3 id="contadorProdutosTitulo" style="color: #fff; font-size: 16px; font-weight: bold; margin: 0; text-align: left;">Produtos em Estoque (0)</h3>
+          
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span style="color: #aaa; font-size: 11px; font-weight: bold; text-transform: uppercase;">AÇÃO EM MASSA:</span>
+            <button onclick="alterarStatusTodos(true)" style="padding: 4px 10px; font-size: 11px; font-weight: bold; border-radius: 4px; background: #00ff88; color: #000; border: none; cursor: pointer;">🟢 Ativar Todos</button>
+            <button onclick="alterarStatusTodos(false)" style="padding: 4px 10px; font-size: 11px; font-weight: bold; border-radius: 4px; background: #ff4444; color: #fff; border: none; cursor: pointer;">🔴 Ocultar Todos</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto; width: 100%;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; color: #fff;">
+            <thead>
+              <tr style="color: #ff7a00; border-bottom: 1px solid #222; background: #111;">
+                <th style="padding: 10px 8px; width: 35%;">Item</th>
+                <th style="padding: 10px 8px;">Categoria</th>
+                <th style="padding: 10px 8px;">Qtd</th>
+                <th style="padding: 10px 8px; color: #ff7a00;">Custo</th>
+                <th style="padding: 10px 8px; color: #ff7a00;">Venda</th>
+                
+                <th style="padding: 10px 8px; text-align: center; color: #ff7a00; width: 120px;">Status Visível</th>
+                
+                <th style="padding: 10px 8px; text-align: center; width: 100px;">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="corpoTabelaAdmin">
+              </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
-  `
-  document.getElementById('btnSalvarProduto').addEventListener('click', salvarProduto)
-  document.getElementById('btnImportarExcel').addEventListener('click', importarExcel)
-  document.getElementById('btnLimparBanco').addEventListener('click', () => {
-    if (confirm("ATENÇÃO MÁXIMA:\nIsso apagará permanentemente todos os produtos salvos! Prosseguir?")) {
-      localStorage.removeItem('produtos')
-      renderizarProdutos()
-    }
-  })
-  renderizarProdutos()
-}
+  `;
 
-function salvarProduto() {
-  const category = document.getElementById('categoriaProduto').value
-  const nome = document.getElementById('nomeProduto').value.trim()
-  const socket = document.getElementById('socketProduto').value.trim()
-  const quantidade = parseInt(document.getElementById('quantidadeProduto').value) || 0
-  const custo = parseFloat(document.getElementById('custoProduto').value) || 0
-  const preco = parseFloat(document.getElementById('precoProduto').value) || 0
-
-  if (!nome) {
-    alert('Insira ao menos o nome do produto!')
-    return
-  }
-
-  const produtos = obterProdutos()
-  const novoProduto = {
-    id: Date.now(),
-    categoria: category,
-    nome,
-    socket,
-    quantidade,
-    custo,
-    preco
-  }
-
-  produtos.push(novoProduto)
-  localStorage.setItem('produtos', JSON.stringify(produtos))
-  
-  document.getElementById('nomeProduto').value = ''
-  document.getElementById('socketProduto').value = ''
-  document.getElementById('quantidadeProduto').value = ''
-  document.getElementById('custoProduto').value = ''
-  document.getElementById('precoProduto').value = ''
-
-  alert('Produto adicionado com sucesso!')
-  renderizarProdutos()
-}
-
-function renderizarProdutos() {
-  const listaDiv = document.getElementById('listaProdutos')
-  if (!listaDiv) return
-  const produtos = obterProdutos()
-  if (produtos.length === 0) {
-    listaDiv.innerHTML = '<p style="color:#aaa; text-align:center;">Nenhum produto em estoque.</p>'
-    return
-  }
-  
-  listaDiv.innerHTML = `
-    <table style="width:100%; border-collapse:collapse; color:#fff; font-size:0.85em; text-align:left;">
-      <thead>
-        <tr style="border-bottom:2px solid #ff7a00; color:#ff7a00;">
-          <th style="padding:6px;">Nome</th>
-          <th style="padding:6px;">Cat</th>
-          <th style="padding:6px;">Qtd</th>
-          <th style="padding:6px;">Venda</th>
-          <th style="padding:6px; text-align:center;">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${produtos.map(p => `
-          <tr style="border-bottom:1px solid #222;">
-            <td style="padding:6px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.nome}</td>
-            <td style="padding:6px;">${p.categoria}</td>
-            <td style="padding:6px;">${p.quantidade}</td>
-            <td style="padding:6px;">R$ ${Number(p.preco).toFixed(2)}</td>
-            <td style="padding:6px; text-align:center;">
-              <button class="btn-excluir-estoque" data-id="${p.id}" style="background:transparent; border:none; color:#ff4444; cursor:pointer; font-size:14px; padding:2px 6px;">🗑️</button>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `
-
-  document.querySelectorAll('.btn-excluir-estoque').forEach(botao => {
-    botao.addEventListener('click', (e) => {
-      const idParaRemover = Number(e.currentTarget.getAttribute('data-id'));
-      const todosProdutos = obterProdutos();
-      const itemEncontrado = todosProdutos.find(p => p.id === idParaRemover);
-
-      if (confirm(`Deseja mesmo remover o item "${itemEncontrado ? itemEncontrado.nome : 'este produto'}" definitivamente do sistema?`)) {
-        const updated = todosProdutos.filter(p => p.id !== idParaRemover);
-        localStorage.setItem('produtos', JSON.stringify(updated));
-        renderizarProdutos();
-      }
+  // Listener para capturar a busca em tempo real sem perder o foco nem inverter strings
+  const inputBusca = document.getElementById('buscaAdminInput');
+  if (inputBusca) {
+    inputBusca.addEventListener('input', () => {
+      window.renderizarLinhasTabelaAdmin();
     });
+  }
+
+  // Listener para salvar produto manual
+  document.getElementById('btnSalvarProduto').addEventListener('click', () => {
+    const cat = document.getElementById('categoriaProduto').value;
+    const nome = document.getElementById('nomeProduto').value.trim();
+    const socket = document.getElementById('socketProduto').value.trim().toUpperCase();
+    const qtd = parseInt(document.getElementById('quantidadeProduto').value) || 0;
+    const custo = parseFloat(document.getElementById('custoProduto').value) || 0;
+    const preco = parseFloat(document.getElementById('precoProduto').value) || 0;
+
+    if (!nome) { alert('Insira ao menos o nome do produto!'); return; }
+
+    const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+    const novoId = produtos.length > 0 ? Math.max(...produtos.map(p => p.id || 0)) + 1 : 1;
+
+    produtos.push({ id: novoId, categoria: cat, nome, socket, quantidade: qtd, custo, preco, ativo: true });
+    localStorage.setItem('produtos', JSON.stringify(produtos));
+    
+    // Limpa campos básicos do formulário
+    document.getElementById('nomeProduto').value = '';
+    document.getElementById('socketProduto').value = '';
+    document.getElementById('quantidadeProduto').value = '';
+    document.getElementById('custoProduto').value = '';
+    document.getElementById('precoProduto').value = '';
+
+    window.renderizarLinhasTabelaAdmin();
   });
-}
 
-function importarExcel() {
-  const inputFile = document.getElementById('arquivoExcel')
-  if (!inputFile || !inputFile.files[0]) {
-    alert('Por favor, selecione um arquivo Excel primeiro.')
-    return
-  }
+  // Processamento do arquivo Excel (.xlsx)
+  document.getElementById('btnProcessarPlanilha').addEventListener('click', () => {
+    const inputArquivo = document.getElementById('uploadPlanilha');
+    const arquivo = inputArquivo ? inputArquivo.files[0] : null;
+    if (!arquivo) { alert('Selecione uma planilha antes de clicar para processar!'); return; }
 
-  const file = inputFile.files[0]
-  const reader = new FileReader()
+    const leitor = new FileReader();
+    leitor.onload = (evt) => {
+      try {
+        const dadosBinarios = evt.target.result;
+        const livro = XLSX.read(dadosBinarios, { type: 'binary' });
+        const nomeAba = livro.SheetNames[0];
+        const linhasJson = XLSX.utils.sheet_to_json(livro.Sheets[nomeAba]);
 
-  reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result)
-      const workbook = XLSX.read(data, { type: 'array' })
-      const primeiraAba = workbook.SheetNames[0]
-      const planilha = workbook.Sheets[primeiraAba]
-      const linhas = XLSX.utils.sheet_to_json(planilha)
-      
-      if (linhas.length === 0) {
-        alert('A planilha importada está vazia.')
-        return
+        if (linhasJson.length === 0) { alert('A planilha está vazia!'); return; }
+
+        const produtosExistentes = JSON.parse(localStorage.getItem('produtos')) || [];
+        let proximoId = produtosExistentes.length > 0 ? Math.max(...produtosExistentes.map(p => p.id || 0)) + 1 : 1;
+
+        linhasJson.forEach(linha => {
+          const nomeOriginal = linha.Nome || linha.nome || linha.PRODUTO || linha.produto || '';
+          if (!nomeOriginal) return;
+
+          const precoVenda = limparNumero(linha.Preco || linha.preco || linha.VENDA || linha.venda || 0);
+          const precoCusto = limparNumero(linha.Custo || linha.custo || linha.CUSTO || linha.custo || 0);
+          const estoqueQtd = parseInt(linha.Quantidade || linha.quantidade || linha.ESTOQUE || linha.estoque) || 0;
+
+          produtosExistentes.push({
+            id: proximoId++,
+            categoria: identificarCategoria(nomeOriginal),
+            nome: nomeOriginal.trim(),
+            preco: precoVenda,
+            custo: precoCusto,
+            quantidade: estoqueQtd,
+            socket: extrairSocket(nomeOriginal),
+            ativo: true
+          });
+        });
+
+        localStorage.setItem('produtos', JSON.stringify(produtosExistentes));
+        alert('Planilha importada com sucesso!');
+        window.renderizarLinhasTabelaAdmin();
+      } catch (err) {
+        alert('Erro ao processar: ' + err.message);
       }
+    };
+    leitor.readAsBinaryString(arquivo);
+  });
 
-      const novosProdutos = linhas.map((linha, index) => {
-        return {
-          id: Date.now() + index,
-          categoria: (linha.categoria || linha.Categoria || 'acessorios').toLowerCase().trim(),
-          nome: linha.nome || linha.Nome || linha.descricao || linha.Descrição || 'Produto sem Nome',
-          socket: (linha.socket || linha.Socket || '').toUpperCase().trim(),
-          quantidade: parseInt(linha.quantidade || linha.Quantidade || linha.estoque || 0),
-          custo: parseFloat(linha.custo || linha.Custo || 0),
-          preco: parseFloat(linha.preco || linha.Preco || linha.venda || linha.Venda || 0)
-        }
-      })
+  // Renderização inicial populando as linhas da tabela
+  window.renderizarLinhasTabelaAdmin();
+}// --- FUNÇÃO PARA SALVAR EDIÇÃO ---
+window.salvarEdicao = function(id) {
+  const linha = document.getElementById(`linha-${id}`);
+  const nome = linha.querySelector('.edit-nome').value;
+  const categoria = linha.querySelector('.edit-cat').value;
+  const qtd = linha.querySelector('.edit-qtd').value;
+  const custo = linha.querySelector('.edit-custo').value;
+  const preco = linha.querySelector('.edit-preco').value;
 
-      localStorage.setItem('produtos', JSON.stringify(novosProdutos))
-      alert(`Sucesso! ${novosProdutos.length} produtos carregados no sistema.`);
-      renderizarProdutos()
-      
-    } catch (erro) {
-      console.error(erro)
-      alert('Erro ao processar o arquivo Excel. Verifique o cabeçalho das colunas.')
-    }
+  const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+  const index = produtos.findIndex(p => p.id === id);
+  
+  if (index !== -1) {
+    produtos[index] = { ...produtos[index], nome, categoria, quantidade: Number(qtd), custo: Number(custo), preco: Number(preco) };
+    localStorage.setItem('produtos', JSON.stringify(produtos));
+    window.renderizarLinhasTabelaAdmin();
   }
-
-  reader.readAsArrayBuffer(file)
 }
 
-telaInicial()
+// --- FUNÇÃO PARA HABILITAR MODO EDIÇÃO ---
+window.habilitarEdicao = function(id) {
+  const linha = document.getElementById(`linha-${id}`);
+  const produto = JSON.parse(localStorage.getItem('produtos')).find(p => p.id === id);
+
+  linha.innerHTML = `
+    <td style="padding: 12px 8px;"><input class="edit-nome" value="${produto.nome}" style="width:90%; background:#222; color:#fff; border:1px solid #444;"></td>
+    <td style="padding: 12px 8px;"><input class="edit-cat" value="${produto.categoria}" style="width:90%; background:#222; color:#fff; border:1px solid #444;"></td>
+    <td style="padding: 12px 8px;"><input class="edit-qtd" type="number" value="${produto.quantidade}" style="width:50px; background:#222; color:#fff; border:1px solid #444;"></td>
+    <td style="padding: 12px 8px;"><input class="edit-custo" value="${produto.custo}" style="width:60px; background:#222; color:#fff; border:1px solid #444;"></td>
+    <td style="padding: 12px 8px;"><input class="edit-preco" value="${produto.preco}" style="width:60px; background:#222; color:#fff; border:1px solid #444;"></td>
+    <td style="padding: 6px 8px; text-align:center;">-</td>
+    <td style="padding: 6px 8px; text-align:center;">
+      <button onclick="salvarEdicao(${id})" style="background:#00ff88; color:#000; border:none; padding:4px 8px; cursor:pointer; font-weight:bold;">SALVAR</button>
+    </td>
+  `;
+}
+
+// --- ATUALIZAÇÃO DO RENDERIZADOR (Adicionar ID à linha) ---
+window.renderizarLinhasTabelaAdmin = function() {
+  const tbody = document.getElementById('corpoTabelaAdmin');
+  if (!tbody) return;
+
+  const listaProdutos = JSON.parse(localStorage.getItem('produtos')) || [];
+  const termoFiltro = document.getElementById('buscaAdminInput') ? document.getElementById('buscaAdminInput').value.toLowerCase() : "";
+
+  const produtosFiltrados = listaProdutos.filter(p => 
+    p.nome.toLowerCase().includes(termoFiltro) || 
+    p.categoria.toLowerCase().includes(termoFiltro)
+  );
+
+  tbody.innerHTML = produtosFiltrados.map(p => {
+    const itemAtivo = (p.ativo === undefined || p.ativo === true || p.ativo === "true");
+    return `
+    <tr id="linha-${p.id}" style="border-bottom: 1px solid #1a1a1a; background: ${itemAtivo ? 'transparent' : 'rgba(255,0,0,0.03)'}">
+      <td style="padding: 12px 8px;">${p.nome}</td>
+      <td style="padding: 12px 8px; text-transform: uppercase;">${p.categoria}</td>
+      <td style="padding: 12px 8px;">${p.quantidade || 0}</td>
+      <td style="padding: 12px 8px;">R$ ${Number(p.custo || 0).toFixed(2)}</td>
+      <td style="padding: 12px 8px; color: #00ff88; font-weight: bold;">R$ ${Number(p.preco || 0).toFixed(2)}</td>
+      <td style="padding: 6px 8px; text-align: center;">
+        <button onclick="alternarStatusProduto(${p.id})" style="padding: 4px 10px; font-size: 11px; background: ${itemAtivo ? '#00ff88' : '#ff4444'}; border:none; cursor:pointer;">
+          ${itemAtivo ? '🟢 ATIVO' : '🔴 OCULTO'}
+        </button>
+      </td>
+      <td style="padding: 6px 8px; text-align: center;">
+        <button onclick="habilitarEdicao(${p.id})" style="background: #ff7a00; border: none; padding: 4px 8px; cursor: pointer;">EDIT</button>
+        <button onclick="deletarProdutoAdmin(${p.id})" style="background: transparent; border: none; color: #ff4444; cursor: pointer;">🗑️</button>
+      </td>
+    </tr>
+    `;
+  }).join('');
+}
+
+// Inicializa a aplicação
+telaInicial();
