@@ -236,6 +236,8 @@ const nomesCategorias = {
 
 function telaFluxoPC(categoriaAtual) {
   let produtosBase = buscarProdutos(categoriaAtual);
+  console.log('Categoria atual:', categoriaAtual);
+console.log(produtosBase);
   
   produtosBase = produtosBase.filter(p => {
     const nome = p.nome.toUpperCase();
