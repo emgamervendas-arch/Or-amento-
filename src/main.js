@@ -241,7 +241,8 @@ function telaFluxoPC(categoriaAtual) {
     const nome = p.nome.toUpperCase();
     switch(categoriaAtual) {
       case 'cpu': return (nome.includes('PROCESSADOR') || nome.includes('RYZEN') || nome.includes('CORE I')) && !nome.includes('PLACA MÃE') && !nome.includes('COOLER');
-      case 'placamae': return (nome.includes('PLACA MÃE') || nome.includes('PLACA-MÃE') || nome.includes('MOTHERBOARD'));
+      case 'placamae':
+  return true;
       case 'ram': return (nome.includes('MEMÓRIA') || nome.includes('MEMORIA DDR') || nome.includes('RAM')) && !nome.includes('SSD');
       case 'ssd': return (nome.includes('SSD') || nome.includes('NVME') || nome.includes('M.2'));
       case 'gpu': return (nome.includes('PLACA DE VÍDEO') || nome.includes('PLACA DE VIDEO') || nome.includes('RTX') || nome.includes('RX ') || nome.includes('GTX'));
