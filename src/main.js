@@ -519,6 +519,86 @@ window.renderizarLinhasTabelaAdmin = function() {
     </tr>
     `;
   }).join('');
+}// --- LÓGICA DE IMPORTAÇÃO DE PLANILHA ---
+window.processarPlanilha = function() {
+  const fileInput = document.getElementById('uploadPlanilha');
+  if (!fileInput.files.length) {
+    alert("Selecione um arquivo primeiro!");
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+    // Mapeamento dos dados da planilha para o sistema
+    const novosProdutos = jsonData.map((item, index) => {
+      // Ajuste os nomes das colunas abaixo conforme o seu Excel (ex: 'Nome', 'Estoque', 'Preço')
+      const nome = item['Nome'] || item['nome'] || "Produto Sem Nome";
+      const preco = limparNumero(item['Preço'] || item['Venda'] || 0);
+      const custo = limparNumero(item['Custo'] || 0);
+      const qtd = limparNumero(item['Estoque'] || item['Quantidade'] || 0);
+      
+      return {
+        id: Date.now() + index,
+        nome: nome,
+        categoria: identificarCategoria(nome),
+        socket: extrairSocket(nome),
+        preco: preco,
+        custo: custo,
+        quantidade: qtd,
+        ativo: true
+      };
+    });
+
+    const produtosAtuais = JSON.parse(localStorage.getItem('produtos')) || [];
+    localStorage.setItem('produtos', JSON.stringify([...produtosAtuais, ...novosProdutos]));
+    alert("Planilha processada com sucesso!");
+    window.renderizarLinhasTabelaAdmin();
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+// --- FUNÇÃO SALVAR MANUAL ---
+window.salvarProdutoManual = function() {
+  const novo = {
+    id: Date.now(),
+    categoria: document.getElementById('categoriaProduto').value,
+    nome: document.getElementById('nomeProduto').value,
+    socket: document.getElementById('socketProduto').value,
+    quantidade: Number(document.getElementById('quantidadeProduto').value),
+    custo: Number(document.getElementById('custoProduto').value),
+    preco: Number(document.getElementById('precoProduto').value),
+    ativo: true
+  };
+
+  const lista = JSON.parse(localStorage.getItem('produtos')) || [];
+  lista.push(novo);
+  localStorage.setItem('produtos', JSON.stringify(lista));
+  alert('Produto adicionado!');
+  window.renderizarLinhasTabelaAdmin();
+};
+
+// --- AJUSTE DOS EVENT LISTENERS NO TELA ADMIN ---
+// Ao chamar a telaAdmin, adicione estes listeners:
+function configurarEventosAdmin() {
+  const btnProcessar = document.getElementById('btnProcessarPlanilha');
+  if (btnProcessar) btnProcessar.onclick = window.processarPlanilha;
+
+  const btnSalvar = document.getElementById('btnSalvarProduto');
+  if (btnSalvar) btnSalvar.onclick = window.salvarProdutoManual;
+
+  const buscaAdmin = document.getElementById('buscaAdminInput');
+  if (buscaAdmin) buscaAdmin.addEventListener('input', window.renderizarLinhasTabelaAdmin);
+  
+  window.renderizarLinhasTabelaAdmin();
 }
 
 function telaAdmin() {
