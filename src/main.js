@@ -64,15 +64,53 @@ function limparNumero(valor) {
 
 function identificarCategoria(nomeProduto) {
   const nome = String(nomeProduto).toLowerCase();
-  if (nome.includes('cooler') || nome.includes('water cooler') || nome.includes('ventoinha') || nome.includes('fan')) return 'gabinete'; 
-  if (nome.includes('processador') || nome.includes('ryzen') || nome.includes('intel') || nome.includes('core i')) return 'cpu';
-  if (nome.includes('placa mae') || nome.includes('placa-mãe') || nome.includes('b550') || nome.includes('a520') || nome.includes('h610') || nome.includes('b660')) return 'placamae';
-  if (nome.includes('gforce') || nome.includes('rtx') || nome.includes('gtx') || nome.includes('radeon') || nome.includes('rx ') || nome.includes('placa de video') || nome.includes('placa de vídeo')) return 'gpu';
-  if (nome.includes('memoria') || nome.includes('memória') || nome.includes('ddr4') || nome.includes('ddr5') || nome.includes('ram')) return 'ram';
-  if (nome.includes('ssd') || nome.includes('hd sata') || nome.includes('nvme')) return 'ssd';
-  if (nome.includes('fonte') || nome.includes('watts') || nome.includes('650w') || nome.includes('500w') || nome.includes('750w')) return 'fonte';
+
+  // PLACA MÃE PRIMEIRO
+  if (
+    nome.includes('placa mãe') ||
+    nome.includes('placa mae') ||
+    nome.includes('motherboard') ||
+    nome.includes('b450') ||
+    nome.includes('b550') ||
+    nome.includes('b650') ||
+    nome.includes('b760') ||
+    nome.includes('a520') ||
+    nome.includes('a620') ||
+    nome.includes('h510') ||
+    nome.includes('h610') ||
+    nome.includes('z690') ||
+    nome.includes('z790')
+  ) return 'placamae';
+
+  if (
+    nome.includes('processador') ||
+    nome.includes('ryzen') ||
+    nome.includes('intel') ||
+    nome.includes('core i')
+  ) return 'cpu';
+
+  if (
+    nome.includes('rtx') ||
+    nome.includes('gtx') ||
+    nome.includes('radeon') ||
+    nome.includes('rx ')
+  ) return 'gpu';
+
+  if (
+    nome.includes('memória') ||
+    nome.includes('memoria') ||
+    nome.includes('ram')
+  ) return 'ram';
+
+  if (
+    nome.includes('ssd') ||
+    nome.includes('nvme')
+  ) return 'ssd';
+
+  if (nome.includes('fonte')) return 'fonte';
+
   if (nome.includes('gabinete')) return 'gabinete';
-  if (nome.includes('kit upgrade') || nome.includes('combo')) return 'kit-upgrade';
+
   return 'acessorios';
 }
 
